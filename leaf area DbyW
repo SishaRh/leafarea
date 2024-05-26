@@ -1,0 +1,40 @@
+% 读取图像
+img = imread("D:\Matlab\leafarea-master\202207211455151.jpg"); % 替换为你的图像文件路径
+
+% 转换为灰度图像
+grayImg = rgb2gray(img);
+
+% 使用高斯滤波器去除噪声
+filteredImg = imgaussfilt(grayImg, 2);
+
+% 应用阈值分割，将图像转换为二值图像
+threshold = graythresh(filteredImg); % 使用Otsu方法自动确定阈值
+binaryImg = imbinarize(filteredImg);
+
+% 形态学操作：膨胀和腐蚀，以填补叶片内部的空洞并平滑边缘
+se = strel('disk', 2); % 创建一个2x2的圆形结构元素
+dilatedImg = imdilate(binaryImg, se);
+erodedImg = imerode(dilatedImg, se);
+
+% 寻找连通域
+stats = regionprops(erodedImg, 'Area');
+
+% 假设面积最大的连通域是叶片
+if ~isempty(stats)
+    [~, maxIndex] = max([stats.Area]);
+    leafArea = stats(maxIndex).Area; % 获取最大连通域的面积
+else
+    leafArea = 0;
+end
+
+% 显示结果
+figure;
+subplot(1, 2, 1);
+imshow(grayImg);
+title('Original Image');
+subplot(1, 2, 2);
+imshow(label2rgb(erodedImg));
+title(['Leaf Area: ', num2str(leafArea), ' pixels']);
+
+% 输出叶片面积
+fprintf('The leaf area is: %d pixels\n', leafArea);
